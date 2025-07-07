@@ -29,25 +29,56 @@
 </div>
 {% endblock page_content%}
 {% block javascript %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
-    $(document).ready(function () {
-        $(document).on('submit', 'form', function (e) {
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('submit', function (e) {
+        if (e.target.tagName.toLowerCase() === 'form') {
             e.preventDefault();
-            datuak = $(this).serialize();
-            $.ajax({
-                type: 'POST',
-                url: "{% url 'post_teknologia' %}",
-                data: datuak,
-                success: function (response) {
-                    nodoa = "#" + response.id;
-                    $(nodoa).html(response.tecnologia);
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            fetch("{% url 'post_teknologia' %}", {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
                 },
-                error: function (response) {
-                    alert("Ezin da aldatu. Saiatu beranduago" + response);
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Errorea');
+                return response.json();
+            })
+            .then(data => {
+                const nodoa = document.getElementById(data.id);
+                if (nodoa) {
+                    nodoa.innerHTML = data.tecnologia;
                 }
             })
-        })
-    })
+            .catch(error => {
+                alert("Ezin da aldatu. Saiatu beranduago");
+                console.error(error);
+            });
+        }
+    });
+
+    // CSRF token-a lortzeko funtzioa (Django-n beharrezkoa)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Cookie horren izena bada, balioa atera
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
 </script>
 {% endblock javascript %}
